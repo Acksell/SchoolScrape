@@ -25,13 +25,12 @@ def log(response, *other):
     loglist = ['{} {}'.format(response.status_code, response.reason), response.url, 
                response.history, response.headers] + list(other) + ['-------------------']
     with open('responses.txt','a') as logfile:
-        write = lambda *objects: logfile.write(''.join(str(obj)+'\n' for obj in objects))
-        write(*loglist)
+        logfile.write(''.join(str(obj)+'\n' for obj in loglist))
     if DEBUG: 
         for i in loglist[:-1]: print(i)
 
 class SchoolSoft:
-    BASE_URL = 'https://sms3.schoolsoft.se/es/jsp/'
+    BASE_URL = 'https://sms3.schoolsoft.se/es/jsp/'  # Europaskolan
     # NOTE BUG /student/ might change if you're a teacher.
     SCHEDULE_PATH = BASE_URL + 'student/right_student_schedule.jsp'
     LOGIN_PATH = BASE_URL    + 'Login.jsp'
@@ -52,7 +51,7 @@ class SchoolSoft:
         def decorator(function_to_be_wrapped):
             def schoolsoft_requester(self, *args,**kwargs):
                 data = function_to_be_wrapped(self, *args, **kwargs)
-                if 'term' in data and data['term'] is 0:
+                if 'term' in data and data['term'] is 0:  # default argument
                     data['term'] = datetime.date.today().isocalendar()[1]
                 if method == 'POST':
                     response = self.session.post(url, data=data, headers=self.headers)
@@ -89,7 +88,7 @@ class SchoolSoft:
         '''Allows use of the 'with' statement'''
         return self
     
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):  # TODO: will add error handling
         '''Allows use of the 'with' statement'''
         self.session.close()
 

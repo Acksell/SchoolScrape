@@ -5,8 +5,10 @@
 # 2016-12-06
 
 import time
+import datetime
+import re
+
 import requests
-from bs4 import BeautifulSoup
 
 from secrets import USERNAME, PASSWORD
 
@@ -28,39 +30,67 @@ def log(response, *other):
     if DEBUG: 
         for i in loglist[:-1]: print(i)
 
-session = requests.Session()
+class SchoolSoft:
+    BASE_URL = 'https://sms3.schoolsoft.se/es/jsp/'
+    # NOTE BUG /student/ might change if you're a teacher.
+    SCHEDULE_PATH = BASE_URL + 'student/right_student_schedule.jsp'
+    LOGIN_PATH = BASE_URL    + 'Login.jsp'
+    
+    def __init__(self, username, password, usertype=1):
+        self.session = requests.Session()
+        self.username = username
+        self.password = password
+        self.usertype = usertype
+        
+        # Will change when project is finished, right now it resembles a normal browser User-Agent.
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+        
+        self.last_logged_in = None
+        self.login()
+    
+    def SSRequest(url, method='GET',logging=True):
+        def decorator(function_to_be_wrapped):
+            def schoolsoft_requester(self, *args,**kwargs):
+                data = function_to_be_wrapped(self, *args, **kwargs)
+                if 'term' in data and data['term'] is 0:
+                    data['term'] = datetime.date.today().isocalendar()[1]
+                if method == 'POST':
+                    response = self.session.post(url, data=data, headers=self.headers)
+                else: # assumes no other method than GET and POST.
+                    response = self.session.get(url, params=data, headers=self.headers)
+                if logging: log(response)
+                return response
+            return schoolsoft_requester
+        return decorator
+    
+    @SSRequest(LOGIN_PATH, method='POST')
+    def login(self):
+        self.last_logged_in = time.time()
+        return {'ssusername':self.username, 'action':'login', 'usertype':self.usertype,
+                'sspassword':self.password, 'button':'Logga in'}
+    
+    @SSRequest(SCHEDULE_PATH)
+    def get_schedule(self, week=0):
+        '''Gets the logged in user's schedule for a given week.'''
+        return {'requestid':-2, 'type':0, 'teacher':0, 'student':0, 'room':0, 'term':week}
+    
+    @SSRequest(SCHEDULE_PATH)
+    def get_room_schedule(self, room_id, week=0):
+        '''Gets the schedule of the provided room for a given week.'''
+        return {'requestid':-2, 'type':3, 'room':room_id, 'term':week}
+    
+    @SSRequest(SCHEDULE_PATH)
+    def get_staff_schedule(self, staff_id, week=0):pass
 
-# Will change when project is finished, right now it resembles a normal browser User-Agent.
-headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
-### Authentication
-login_url = 'https://sms3.schoolsoft.se/es/jsp/Login.jsp'
-
-data = {'action':'login','usertype':1,'ssusername':USERNAME,'sspassword':PASSWORD,'button':'Logga in'}
-response = session.post(login_url, data=data, headers=headers)
-log(response)
-
-# Wait until next request
-time.sleep(1)
-
-### Get schedule
-schedule_url = 'https://sms3.schoolsoft.se/es/jsp/student/right_student_schedule.jsp'
-data = {'menu':'schedule'}
-get_schedule = session.get(schedule_url, params=data, headers=headers)
-log(get_schedule)
-
-soup = BeautifulSoup(get_schedule.text, 'html.parser')
-rows = soup.find_all('tr','background schedulerow')
-# encode the result properly and turn into generator
-rows = (row.encode() for row in rows)
-
-# Close connection manually so that the next request
-# doesn't have to wait after Keepalive is dropped. 
-requests.Response.close(response) 
-
-
-
-
-
-
+    @SSRequest(SCHEDULE_PATH)
+    def get_student_schedule(self, student_id, week=0):pass
+    
+    def __enter__(self):
+        '''Allows use of the 'with' statement'''
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        '''Allows use of the 'with' statement'''
+        self.session.close()
 
 

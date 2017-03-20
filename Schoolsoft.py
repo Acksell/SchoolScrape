@@ -29,7 +29,7 @@ def log(response, *other):
     if DEBUG: 
         for i in loglist[:-1]: print(i)
 
-class SchoolSoft:
+class Schoolsoft:
     BASE_URL = 'https://sms3.schoolsoft.se/es/jsp/'  # Europaskolan
     # NOTE BUG /student/ might change if you're a teacher.
     SCHEDULE_PATH = BASE_URL + 'student/right_student_schedule.jsp'
@@ -39,13 +39,14 @@ class SchoolSoft:
         self.session = requests.Session()
         self.username = username
         self.password = password
-        self.usertype = usertype
+        self.usertype = usertype #usertype 1==student
         
         # Will change when project is finished, right now it resembles a normal browser User-Agent.
-        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+        self.headers = {'User-Agent': 'https://github.com/Acksell/SchoolScrape'}
         
         self.last_logged_in = None
         self.login()
+        self.schedule = {}
     
     def SSRequest(url, method='GET',logging=True):
         def decorator(function_to_be_wrapped):

@@ -1,8 +1,13 @@
+#-*- coding: iso-8859-1 -*-
+
+# Schoolsoft API
+# Axel Engström, Europaskolan
+# 2016-12-06
 
 import re  #--> regular expression
 from bs4 import BeautifulSoup
 
-class ScheduleParser:
+class ScheduleParser: ### NOTE TODO inherit from dict to access schedule days by keys 0-4?
     def __init__(self, schedule_response):
         self.schedule_response = schedule_response
         self.soup = BeautifulSoup(schedule_response.text, 'html.parser')
@@ -13,12 +18,12 @@ class ScheduleParser:
         self.schedule = self.map_to_days()
     
     def get_all_options(self):
-        dropdown = ScheduleParser(ss.get_room_schedule(0)).soup.find_all('div', class_='btn-group')
+        dropdown = ScheduleParser(self.schedule_response).soup.find_all('div', class_='btn-group')
         names_links = []
         for option in dropdown[1].find_all('a'):
             link = option.get('href')
             name = option.get_text()
-            names_links.append({'name':name,'link':link})
+            names_links.append((name, link))
         return names_links
     
     def _get_insertion_point(self):
@@ -37,8 +42,11 @@ class ScheduleParser:
         return winner[0], winner[1][0]
 
     def map_to_days(self):
-        # 0-4 <=> mon-fri
-        schedule = {0:[],1:[],2:[],3:[],4:[]}
+        '''
+        Returns a dictionary with days 0-4 as keys and 
+        a list with Lesson objects as values.
+        '''
+        schedule = {0:[],1:[],2:[],3:[],4:[]}  # 0-4 <=> mon-fri
         for row in self.rows:
             td_tags = row.find_all('td')
             
@@ -65,7 +73,10 @@ class Lesson(set):
         self.lesson_header = lesson_header
         
         self.timespan = re.search(r'\d{1,2}:\d{2}\-\d{1,2}:\d{2}', lesson_header).group()
-        self.name = re.findall(r'\d{1,2}:\d{2}\-\d{1,2}:\d{2} (.+)\] body=', lesson_header)[0]
+        try:
+            self.name = re.findall(r'\d{1,2}:\d{2}\-\d{1,2}:\d{2} (.+)\] body=', lesson_header)[0]
+        except IndexError:
+            self.name = None
         try:
             self.room = re.findall(r'Sal/resurs: (.+)(?:\\r\\n|\r\n)<br', lesson_header)[0]
         except IndexError:

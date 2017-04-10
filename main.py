@@ -71,7 +71,7 @@ if __name__ == '__main__':
         for room in best_rooms:
             lesson_overlap = False
             for lesson in all_rooms[room[0]].schedule[today]:
-                if end > lesson.end > now or end > lesson.start > now:
+                if (now >= lesson.start and end <= lesson.end) or end >= lesson.end > now or end > lesson.start >= now:
                     print(lesson)
                     lesson_overlap = True
             if not lesson_overlap:

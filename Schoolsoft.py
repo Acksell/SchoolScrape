@@ -48,7 +48,7 @@ class Schoolsoft:
         self.login()
         self.schedule = {}
     
-    def SSRequest(url, method='GET',logging=True):
+    def SSRequest(url, method='GET',logging=DEBUG):
         def decorator(function_to_be_wrapped):
             def schoolsoft_requester(self, *args,**kwargs):
                 data = function_to_be_wrapped(self, *args, **kwargs)
@@ -80,11 +80,11 @@ class Schoolsoft:
         return {'requestid':-2, 'type':3, 'room':room_id, 'term':week}
     
     @SSRequest(SCHEDULE_PATH)
-    def get_staff_schedule(self, staff_id, week=0):pass
+    def get_staff_schedule(self, staff_id, week=0):
         return {'requestid':-2, 'type':1, 'teacher':staff_id, 'term':week}
 
     @SSRequest(SCHEDULE_PATH)
-    def get_student_schedule(self, student_id, week=0):pass
+    def get_student_schedule(self, student_id, week=0):
         return {'requestid':-2, 'type':2, 'student':student_id, 'term':week}
     
     @SSRequest(SCHEDULE_PATH)

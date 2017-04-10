@@ -81,9 +81,15 @@ class Schoolsoft:
     
     @SSRequest(SCHEDULE_PATH)
     def get_staff_schedule(self, staff_id, week=0):pass
+        return {'requestid':-2, 'type':1, 'teacher':staff_id, 'term':week}
 
     @SSRequest(SCHEDULE_PATH)
     def get_student_schedule(self, student_id, week=0):pass
+        return {'requestid':-2, 'type':2, 'student':student_id, 'term':week}
+    
+    @SSRequest(SCHEDULE_PATH)
+    def get_class_schedule(self, class_id, week=0):
+        return {'requestid':class_id, 'type':1, 'term':week}
     
     def __enter__(self):
         '''Allows use of the 'with' statement'''
